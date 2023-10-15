@@ -1,5 +1,0 @@
-int j = 1 == 0
-
-if (999)
-    print(j)
-fi;

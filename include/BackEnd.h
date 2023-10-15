@@ -1,28 +1,23 @@
-#ifndef SCALC_BACKEND_H
-#define SCALC_BACKEND_H
+#pragma once
 
-#include "SCalcBaseVisitor.h"
-#include "StringInterface.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/MLIRContext.h"
+#include "mlir/IR/BuiltinOps.h"
 
-using namespace scalc;
+class BackEnd {
+ public:
+    BackEnd();
 
-class Backend : public SCalcBaseVisitor{
-private:
-    StringInterface * strings;
+    int emitMain();
 
-public:
-    explicit Backend(StringInterface * interface){ strings = interface; }
-    std::any visitFile(SCalcParser::FileContext * ctx) override;
-    std::any visitDecl(SCalcParser::DeclContext * ctx) override;
-    std::any visitAssn(SCalcParser::AssnContext * ctx) override;
-    std::any visitCond(SCalcParser::CondContext * ctx) override;
-    std::any visitLoop(SCalcParser::LoopContext * ctx) override;
-    std::any visitPrnt(SCalcParser::PrntContext * ctx) override;
-    std::any visitParens(SCalcParser::ParensContext * ctx) override;
-    std::any visitOp(SCalcParser::OpContext * ctx) override;
-    std::any visitLit(SCalcParser::LitContext * ctx) override;
-    std::any visitId(SCalcParser::IdContext * ctx) override;
+ protected:
+    void setupPrintf();
+    void printNewline();
+
+ private:
+    mlir::MLIRContext context;
+    mlir::ModuleOp module;
+    std::shared_ptr<mlir::OpBuilder> builder;
+
+    mlir::Location loc;
 };
-
-
-#endif //SCALC_BACKEND_H

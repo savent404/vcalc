@@ -1,10 +1,13 @@
 cmake_minimum_required(VERSION 3.0)
-project(SCalcBase)
+project(VCalcBase)
 
 # Ensure tool dependencies.
 include(ExternalProject) # Required to download and build external projects (i.e. ANTLR).
 find_package(Git REQUIRED) # Need git to download ANTLR through ExternalProject.
 find_package(Java COMPONENTS Runtime REQUIRED) # Need java to run ANTLR, but only the runtime.
+
+# Ensure we have LLVM.
+include("${CMAKE_SOURCE_DIR}/cmake/get_mlir.cmake")
 
 # Link against the pthreads library to make std::call_once 
 # in generated ANTLR code to run without producing system errors
@@ -25,8 +28,8 @@ include("${CMAKE_SOURCE_DIR}/cmake/symlink_to_bin.cmake")
 include("${CMAKE_SOURCE_DIR}/cmake/get_antlr.cmake")
 
 # Set up paths and info to generate ANTLR sources with.
-set(GRAMMAR_NAME "SCalc")
-set(ANTLR_NAMESPACE "scalc")
+set(GRAMMAR_NAME "VCalc")
+set(ANTLR_NAMESPACE "vcalc")
 
 # Generate sources.
 include("${CMAKE_SOURCE_DIR}/cmake/antlr_generate.cmake")
@@ -36,3 +39,6 @@ include_directories("${CMAKE_SOURCE_DIR}/include")
 
 # Build the source directory.
 add_subdirectory("${CMAKE_SOURCE_DIR}/src")
+
+# Add the runtime directory.
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/runtime")
