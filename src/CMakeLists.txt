@@ -1,30 +1,31 @@
 # Gather our source files in this directory.
 set(
-  vcalc_src_files
+  scalc_src_files
     "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/BackEnd.cpp"
+        Interpreter.cpp
+        ../include/Interpreter.h
+        Backend.cpp
+        ../include/Backend.h
+        ../include/StringInterface.h
+        ../include/StringInterface.h
+        RISCV.cpp
+        ../include/RISCV.h
+        X86.cpp
+        ../include/X86.h
+        ARM.cpp
+        ../include/ARM.h
 )
 
 # Build our executable from the source files.
-add_executable(vcalc ${vcalc_src_files})
-target_include_directories(vcalc PUBLIC ${ANTLR_GEN_DIR})
+add_executable(scalc ${scalc_src_files}
+        ../include/StringInterface.h)
+target_include_directories(scalc PUBLIC ${ANTLR_GEN_DIR})
 
 # Ensure that the antlr4-runtime is available.
-add_dependencies(vcalc antlr)
+add_dependencies(scalc antlr)
 
-# Find the libraries that correspond to the LLVM components
-# that we wish to use
-set(LLVM_LINK_COMPONENTS Core Support)
-llvm_map_components_to_libnames(llvm_libs core)
-get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
-
-# Add the MLIR, LLVM, antlr runtime and parser as libraries to link.
-target_link_libraries(vcalc PRIVATE
-    parser
-    antlr4-runtime
-    ${llvm_libs}
-    ${dialect_libs}
-    )
+# Add the antlr runtime and parser as libraries to link.
+target_link_libraries(scalc parser antlr4-runtime)
 
 # Symbolic link our executable to the base directory so we don't have to go searching for it.
-symlink_to_bin("vcalc")
+symlink_to_bin("scalc")

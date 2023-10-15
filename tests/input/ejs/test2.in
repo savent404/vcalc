@@ -1,0 +1,10 @@
+int i = 10;
+int j = 3;
+print(i * j);
+print(i / j);
+print(i + j);
+print(i - j);
+print(i > j);
+print(i < j);
+print(i == j);
+print(i != j);

@@ -1,84 +1,67 @@
-#include <assert.h>
+#include "Backend.h"
 
-#include "mlir/Dialect/LLVMIR/LLVMDialect.h"
-#include "mlir/IR/BuiltinAttributes.h"
-#include "mlir/IR/TypeRange.h"
-#include "mlir/IR/Value.h"
-#include "mlir/IR/Verifier.h"
-
-#include "BackEnd.h"
-
-BackEnd::BackEnd() : loc(mlir::UnknownLoc::get(&context)) {
-    context.loadDialect<mlir::LLVM::LLVMDialect>();
-
-    builder = std::make_shared<mlir::OpBuilder>(&context);
-
-    // Open a new context and module.
-    module = mlir::ModuleOp::create(builder->getUnknownLoc());
-    builder->setInsertionPointToStart(module.getBody());
-
-    setupPrintf();
-}
-
-int BackEnd::emitMain() {
-    mlir::Type intType = mlir::IntegerType::get(&context, 32);
-    auto mainType = mlir::LLVM::LLVMFunctionType::get(intType, {}, false);
-    mlir::LLVM::LLVMFuncOp mainFunc = builder->create<mlir::LLVM::LLVMFuncOp>(loc, "main", mainType);
-    mlir::Block *entry = mainFunc.addEntryBlock();
-    builder->setInsertionPointToStart(entry);
-
-    printNewline();
-
-    mlir::Value zero = builder->create<mlir::LLVM::ConstantOp>(loc, intType, builder->getIntegerAttr(intType, 0));
-    builder->create<mlir::LLVM::ReturnOp>(builder->getUnknownLoc(), zero);
-
-    module.dump();
-
-    if (mlir::failed(mlir::verify(module))) {
-        module.emitError("module failed to verify");
-        return -1;
+std::any Backend::visitFile(SCalcParser::FileContext * ctx) {
+    std::string output = "";
+    for (auto f_stmt : ctx->full_statement()) {
+        output += std::any_cast<std::string>(visit(f_stmt));
     }
-    return 0;
+    if (output == ""){return (std::string)"";}
+    return (std::string)(strings->header() + output + strings->exit());
 }
 
-void BackEnd::setupPrintf() {
-    // Create the global string "\n"
-    mlir::Type charType = mlir::IntegerType::get(&context, 8);
-    auto gvalue = mlir::StringRef("\n\0", 2);
-    auto type = mlir::LLVM::LLVMArrayType::get(charType, gvalue.size());
-    builder->create<mlir::LLVM::GlobalOp>(loc, type, /*isConstant=*/true,
-                               mlir::LLVM::Linkage::Internal, "newline",
-                               builder->getStringAttr(gvalue), /*alignment=*/0);
-
-    // Create a function declaration for printf, the signature is:
-    //   * `i32 (i8*, ...)`
-    mlir::Type intType = mlir::IntegerType::get(&context, 32);
-    auto llvmI8PtrTy = mlir::LLVM::LLVMPointerType::get(charType);
-    auto llvmFnType = mlir::LLVM::LLVMFunctionType::get(intType, llvmI8PtrTy,
-                                                        /*isVarArg=*/true);
-
-    // Insert the printf function into the body of the parent module.
-    builder->create<mlir::LLVM::LLVMFuncOp>(loc, "printf", llvmFnType);
+std::any Backend::visitDecl(SCalcParser::DeclContext * ctx) {
+    std::string name = ctx->name->getText();
+    strings->declare(&name);
+    auto expr = std::any_cast<std::string>(visit(ctx->exp));
+    return (std::string)(expr + strings->assign(&name));
 }
 
-void BackEnd::printNewline() {
-    /* Note: a lot of this comes from the MLIR "toy" tutorial */
-    mlir::LLVM::GlobalOp global;
-    if (!(global = module.lookupSymbol<mlir::LLVM::GlobalOp>("newline"))) {
-        llvm::errs() << "missing format string!\n";
-        return;
+std::any Backend::visitAssn(SCalcParser::AssnContext * ctx) {
+    std::string name = ctx->name->getText();
+    auto expr = std::any_cast<std::string>(visit(ctx->exp));
+    return (std::string)(expr + strings->assign(&name));
+}
+
+std::any Backend::visitCond(SCalcParser::CondContext * ctx) {
+    auto expr = std::any_cast<std::string>(visit(ctx->exp));
+    std::string body = "";
+    for (auto ps : ctx->part_statement()) {
+        body += std::any_cast<std::string>(visit(ps));
     }
+    return (std::string)(expr + strings->cond(&body));
+}
 
-    // Get the pointer to the first character in the global string.
-    mlir::Value globalPtr = builder->create<mlir::LLVM::AddressOfOp>(loc, global);
-    mlir::Value cst0 = builder->create<mlir::LLVM::ConstantOp>(loc, builder->getI64Type(),
-                                                        builder->getIndexAttr(0));
+std::any Backend::visitLoop(SCalcParser::LoopContext * ctx) {
+    auto expr = std::any_cast<std::string>(visit(ctx->exp));
+    std::string body = "";
+    for (auto ps : ctx->part_statement()) {
+        body += std::any_cast<std::string>(visit(ps));
+    }
+    return (std::string)strings->loop(&expr, &body);
+}
 
-    mlir::Type charType = mlir::IntegerType::get(&context, 8);
-    mlir::Value newLine = builder->create<mlir::LLVM::GEPOp>(loc,
-                          mlir::LLVM::LLVMPointerType::get(charType),
-                          globalPtr, mlir::ArrayRef<mlir::Value>({cst0, cst0}));
+std::any Backend::visitPrnt(SCalcParser::PrntContext * ctx) {
+    auto expr = std::any_cast<std::string>(visit(ctx->exp));
+    return (std::string)(expr + strings->print());
+}
 
-    mlir::LLVM::LLVMFuncOp printfFunc = module.lookupSymbol<mlir::LLVM::LLVMFuncOp>("printf");
-    builder->create<mlir::LLVM::CallOp>(loc, printfFunc, newLine);
+std::any Backend::visitParens(SCalcParser::ParensContext * ctx) {
+    return (std::string)std::any_cast<std::string>(visit(ctx->expression()));
+}
+
+std::any Backend::visitOp(SCalcParser::OpContext * ctx) {
+    auto left = std::any_cast<std::string>(visit(ctx->expression(0)));
+    auto right = std::any_cast<std::string>(visit(ctx->expression(1)));
+    std::string op = ctx->op->getText();
+    return (std::string)(left + right + strings->operation(&op));
+}
+
+std::any Backend::visitLit(SCalcParser::LitContext * ctx) {
+    std::string lit = ctx->INT_LIT()->getText();
+    return (std::string)strings->literal(&lit);
+}
+
+std::any Backend::visitId(SCalcParser::IdContext * ctx) {
+    std::string id = ctx->getText();
+    return (std::string)strings->get_value_from_id(&id);
 }

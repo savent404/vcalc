@@ -1,0 +1,21 @@
+{
+  "inDir": "<inDir>",
+  "outDir": "<outDir>",
+  "testedExecutablePaths": {
+    "<ccid>": "<path_to_scalc_exe>"
+  },
+  "toolchains": {
+    "interpreter": [
+      {
+        "stepName": "scalc-interpreter",
+        "executablePath": "$EXE",
+        "arguments": [
+          "interpreter",
+          "$INPUT",
+          "$OUTPUT"
+          ],
+        "output": "interpreterOut"
+      }
+    ]
+  }
+}

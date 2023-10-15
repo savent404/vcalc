@@ -5,7 +5,7 @@
 
 # Fail if we don't have the ANTLR jar.
 if(NOT EXISTS "${ANTLR_JAR}")
-  message(FATAL_ERROR "Unable to find antlr jar. Did we miss a build step?")
+  message(FATAL_ERROR "Unable to find antlr jar at ${ANTLR_JAR}")
 endif()
 
 # TODO: Change this into a list
