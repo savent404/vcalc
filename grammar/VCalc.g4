@@ -38,8 +38,8 @@ print
 
 exp
     : varOrExp
-    | '[' var 'in' exp '|' exp ']'
-    | '[' var 'in' exp '&' exp ']'
+    | '[' var 'in' exp operatorGenerator exp ']'
+    | '[' var 'in' exp operatorFilter exp ']'
     | exp '[' exp ']'
     | exp operatorRange exp
     | exp operatorMulDiv exp
@@ -57,6 +57,12 @@ var
     : INT
     | NAME
     ;
+
+operatorGenerator
+    : '|';
+
+operatorFilter
+    : '&';
 
 operatorRange
     : '..';
