@@ -1,0 +1,10 @@
+vector i = 1 .. 2;
+
+print(1..10);
+print((10-8)..(9+2));
+
+int i = 1;
+print(i..5);
+
+int j = 0;
+print(i..j);

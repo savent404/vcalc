@@ -1,0 +1,6 @@
+int a = 0 + (0 + 1) * 10 + 100/10;
+
+loop (a) 
+    print(a);
+    a = a - 1;
+pool;

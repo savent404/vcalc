@@ -1,0 +1,12 @@
+vector v = 1..5;
+print(v[0 - 1]);
+print(v[2]);
+print(v[5]);
+print([i in v | i * 2][3]);
+print([i in v & i > 2][0]);
+
+
+vector v = 1..7;
+vector i = 2..4;
+print(v[i]);
+print(v[i * 2]);

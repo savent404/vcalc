@@ -1,0 +1,9 @@
+vector i = 0..10;
+
+print([j in i | j]);
+
+print([j in 0..10 | j]);
+
+print([j in 0..10 | j * 10]);
+
+print([j in [j in 0..10 | j] | j + 1]);
