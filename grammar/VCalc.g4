@@ -21,10 +21,7 @@ assign: var '=' exp;
 
 vardef
     :   'int' var ('=' exp)?
-    ;
-
-explist
-    : (exp ',')* exp
+    |   'vector' var ('=' exp)?
     ;
 
 loop
@@ -40,9 +37,12 @@ print
     ;
 
 exp
-    : number
-    | varOrExp var*
-    | exp operatorMulDivMod exp
+    : varOrExp
+    | '[' var 'in' exp '|' exp ']'
+    | '[' var 'in' exp '&' exp ']'
+    | exp '[' exp ']'
+    | exp operatorRange exp
+    | exp operatorMulDiv exp
     | exp operatorAddSub exp
     | exp operatorComparison exp
     | exp operatorAnd exp
@@ -54,8 +54,12 @@ varOrExp
     ;
 
 var
-    : NAME
+    : INT
+    | NAME
     ;
+
+operatorRange
+    : '..';
 
 operatorOr
 	: 'or';
@@ -69,12 +73,8 @@ operatorComparison
 operatorAddSub
 	: '+' | '-';
 
-operatorMulDivMod
-	: '*' | '/' | '%' | '//';
-
-number
-    : INT
-    ;
+operatorMulDiv
+	: '*' | '/' ;
 
 // LEXER
 
