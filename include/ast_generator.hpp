@@ -80,19 +80,36 @@ struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
         return node->tokenId;
     }
 
+    BlockNodePtr createBlockAndVisit(std::function<void(void)> fn)
+    {
+        // create new block
+        auto block = new BlockNode();
+        tokens.addNode(block);
+
+        // push block, use new block as current block
+        auto block_backup = currentBlock;
+        currentBlock = block;
+
+        // call fn
+        fn();
+
+        // pop block, recover current block
+        currentBlock = block_backup;
+
+        return block;
+    }
+
     virtual std::any visitIf(vcalc::VCalcParser::IfContext* ctx) override
     {
         auto any = visit(ctx->exp());
         auto token = std::any_cast<size_t>(any);
         auto exp = tokens.getNode<ExprNodePtr>(token);
 
-        auto block = new BlockNode();
-        auto block_backup = currentBlock;
-        tokens.addNode(block);
-        currentBlock = block;
-        any = visit(ctx->block());
-        token = std::any_cast<size_t>(any);
-        currentBlock = block_backup;
+        auto block = createBlockAndVisit([&]() {
+            any = visit(ctx->block());
+            token = std::any_cast<size_t>(any);
+        });
+
         auto node = new IfNode { exp, block };
         tokens.addNode(node);
         return node->tokenId;
@@ -103,13 +120,13 @@ struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
         auto any = visit(ctx->exp());
         auto token = std::any_cast<size_t>(any);
         auto exp = tokens.getNode<ExprNodePtr>(token);
-        auto block = new BlockNode();
-        auto block_backup = currentBlock;
-        tokens.addNode(block);
-        currentBlock = block;
-        any = visit(ctx->block());
-        token = std::any_cast<size_t>(any);
-        currentBlock = block_backup;
+
+
+        auto block = createBlockAndVisit([&]() {
+            any = visit(ctx->block());
+            token = std::any_cast<size_t>(any);
+        });
+
         auto node = new LoopNode { exp, block };
         tokens.addNode(node);
         return node->tokenId;
