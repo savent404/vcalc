@@ -120,6 +120,11 @@ struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
             token = std::any_cast<size_t>(any);
         });
 
+        if (exp->getValueType() != ValueType::Boolean) {
+            exp = new ConvertNode { ValueType::Boolean, exp };
+            tokens.addNode(exp);
+        }
+
         auto node = new IfNode { exp, block };
         tokens.addNode(node);
         return node->tokenId;
@@ -135,6 +140,11 @@ struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
             any = visit(ctx->block());
             token = std::any_cast<size_t>(any);
         });
+
+        if (exp->getValueType() != ValueType::Boolean) {
+            exp = new ConvertNode { ValueType::Boolean, exp };
+            tokens.addNode(exp);
+        }
 
         auto node = new LoopNode { exp, block };
         tokens.addNode(node);
@@ -256,9 +266,54 @@ private:
         auto rhs_token = std::any_cast<size_t>(visit(ctx->exp(1)));
         auto lhs = tokens.getNode<ExprNodePtr>(lhs_token);
         auto rhs = tokens.getNode<ExprNodePtr>(rhs_token);
-        // TODO: check value type
-        // TODO: convert lhs and rhs to the same type
-        return new BinaryNode { kind, lhs, rhs };
+        auto node = new BinaryNode { kind, lhs, rhs };
+        ExprNodePtr out = node;
+
+        auto node_valueType = node->getValueType();
+        auto lhs_valueType = lhs->getValueType();
+        auto rhs_valueType = rhs->getValueType();
+
+        assert(node_valueType != ValueType::Unknow);
+        assert(lhs_valueType != ValueType::Unknow);
+        assert(rhs_valueType != ValueType::Unknow);
+
+        if (lhs_valueType != rhs_valueType) {
+            auto res = valueTypeCmp(lhs_valueType, rhs_valueType);
+            // add type convert node(ConvertNode) for the little one
+            // replace the binaryNode's lhs or rhs then
+            if (res > 0) {
+                node->rhs = new ConvertNode { lhs->getValueType(), rhs };
+                tokens.addNode(node->rhs);
+            } else {
+                node->lhs = new ConvertNode { rhs->getValueType(), lhs };
+                tokens.addNode(node->lhs);
+            }
+        } else {
+            // lhs and rhs is the same type, but not same as node
+            if (node_valueType != lhs_valueType) {
+                // force node's type as lhs and rhs's type
+                // add type convert node(ConvertNode) for node
+                node->valueType = lhs_valueType;
+                auto upper_node = new ConvertNode { node_valueType, node };
+                // can't touch node anymore, so we need record tokens
+                tokens.addNode(node);
+                // return convert node as tree root
+                out = upper_node;
+            }
+        }
+        return out;
+    }
+
+    static int valueTypeCmp(ValueType lhs, ValueType rhs)
+    {
+        int val[4] = {
+            0, 1, 2, 1000
+        };
+        int v1 = val[static_cast<int>(lhs)];
+        int v2 = val[static_cast<int>(rhs)];
+        if (v1 == v2)
+            return 0;
+        return v1 > v2 ? 1 : -1;
     }
 
     BinaryKind getBinaryKind(std::string op)

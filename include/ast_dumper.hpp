@@ -168,6 +168,26 @@ public:
         case ExprKind::Value:
             dump(reinterpret_cast<ValueNodePtr>(expr));
             break;
+        case ExprKind::Convert:
+            printIndent();
+            std::cout << "ConvertNode {" << std::endl;
+            Callee([&] {
+                auto convertExpr = reinterpret_cast<ConvertNodePtr>(expr);
+                printIndent();
+                std::cout << "convert $expr to $type" << std::endl;
+                printIndent();
+                std::cout << "$type: " << convertExpr->getValueTypeStr() << std::endl;
+                printIndent();
+                std::cout << "$expr: {" << std::endl;
+                Callee([&] {
+                    dump(convertExpr->exp);
+                });
+                printIndent();
+                std::cout << "}" << std::endl;
+            });
+            printIndent();
+            std::cout << "}" << std::endl;
+            break;
         case ExprKind::Binary:
             const std::string binaryStr[] = {
                 [static_cast<int>(BinaryKind::Add)] = "+",

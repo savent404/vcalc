@@ -24,6 +24,7 @@ struct PrintNode;
 struct IfNode;
 struct LoopNode;
 struct VarScope;
+struct ConvertNode;
 
 using NodePtr = Node*;
 using BlockNodePtr = BlockNode*;
@@ -37,6 +38,7 @@ using PrintNodePtr = PrintNode*;
 using IfNodePtr = IfNode*;
 using LoopNodePtr = LoopNode*;
 using VarScopePtr = VarScope*;
+using ConvertNodePtr = ConvertNode*;
 
 enum class ValueType {
     Boolean = 0,
@@ -137,6 +139,7 @@ struct ExprNode : public Node {
     enum class Type {
         Value,
         Binary,
+        Convert,
     };
     Type exprType;
     ValueType valueType;
@@ -162,6 +165,75 @@ struct ExprNode : public Node {
             return "unknow";
         }
         return "unknow";
+    }
+};
+
+struct ConvertNode : public ExprNode {
+    enum class CvtKind {
+        Bool2Int,
+        Bool2Vec,
+        Int2Bool,
+        Int2Vec,
+        Invalid,
+    };
+    CvtKind unaryKind;
+    ExprNodePtr exp;
+
+    ConvertNode(ValueType type, ExprNodePtr exp)
+        : ExprNode(Type::Convert, type)
+        , unaryKind(CvtKind::Bool2Int)
+        , exp(std::move(exp))
+    {
+        CvtKind matrix[4][4] = {
+            {
+                /* 0,0 */ CvtKind::Invalid,
+                /* 0,1 */ CvtKind::Int2Bool,
+                /* 0,2 */ CvtKind::Invalid,
+                /* 0,3 */ CvtKind::Invalid,
+            },
+            {
+                /* 1,0 */ CvtKind::Bool2Int,
+                /* 1,1 */ CvtKind::Invalid,
+                /* 1,2 */ CvtKind::Invalid,
+                /* 1,3 */ CvtKind::Invalid,
+            },
+            {
+                /* 2,0 */ CvtKind::Bool2Vec,
+                /* 2,1 */ CvtKind::Int2Vec,
+                /* 2,2 */ CvtKind::Invalid,
+                /* 2,3 */ CvtKind::Invalid,
+            },
+            {
+                /* 3,0 */ CvtKind::Invalid,
+                /* 3,1 */ CvtKind::Invalid,
+                /* 3,2 */ CvtKind::Invalid,
+                /* 3,3 */ CvtKind::Invalid,
+            }
+
+        };
+        int v1 = static_cast<int>(type);
+        int v2 = static_cast<int>(exp->getValueType());
+
+        unaryKind = matrix[v1][v2];
+        assert(unaryKind != CvtKind::Invalid);
+    }
+
+    CvtKind getCvtKind() const { return unaryKind; }
+    const std::string getCvtKindStr() const
+    {
+        switch (unaryKind) {
+        case CvtKind::Bool2Int:
+            return "bool->int";
+        case CvtKind::Bool2Vec:
+            return "bool->vec";
+        case CvtKind::Int2Bool:
+            return "int->bool";
+        case CvtKind::Int2Vec:
+            return "int->vec";
+        case CvtKind::Invalid:
+            return "invalid";
+        }
+        return "invalid";
     }
 };
 
