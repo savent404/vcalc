@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
   visitor.visit(tree);
 
   BackEnd backend;
-  backend.emitMain(*visitor.root);
+  backend.emitMain(*visitor.rootNode);
 
   // HOW TO WRITE OUT.
   // std::ofstream out(argv[2]);

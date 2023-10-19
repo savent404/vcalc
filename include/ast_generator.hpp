@@ -35,14 +35,18 @@ struct TokenManager {
 };
 
 struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
-    BlockNodePtr root;
+    BlockNodePtr rootNode;
     BlockNodePtr currentBlock;
+    VarScopePtr rootScope;
+    VarScopePtr currentScope;
     TokenManager tokens;
 
     VCalAstGenerator()
     {
-        root = new BlockNode();
-        currentBlock = root;
+        rootNode = new BlockNode();
+        currentBlock = rootNode;
+        rootScope = new VarScope { rootNode, nullptr };
+        currentScope = rootScope;
     }
 
     void insertStat(StateNodePtr node)
@@ -86,15 +90,21 @@ struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
         auto block = new BlockNode();
         tokens.addNode(block);
 
-        // push block, use new block as current block
+        // register new VarScope
+        auto scope = new VarScope { block, currentScope };
+
+        // push block and scope, use new one as current block
         auto block_backup = currentBlock;
+        auto scope_backup = currentScope;
         currentBlock = block;
+        currentScope = scope;
 
         // call fn
         fn();
 
-        // pop block, recover current block
+        // pop block and scope, recover old one as current block
         currentBlock = block_backup;
+        currentScope = scope_backup;
 
         return block;
     }
@@ -120,7 +130,6 @@ struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
         auto any = visit(ctx->exp());
         auto token = std::any_cast<size_t>(any);
         auto exp = tokens.getNode<ExprNodePtr>(token);
-
 
         auto block = createBlockAndVisit([&]() {
             any = visit(ctx->block());
@@ -151,6 +160,13 @@ struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
         auto any = visit(ctx->var());
         auto token = std::any_cast<size_t>(any);
         auto var = tokens.getNode<ValueNodePtr>(token);
+
+        // add var to current scope, check if var already defined
+        if (currentScope->find(var->name)) {
+            throw std::runtime_error("visitVardef: var already defined");
+        }
+        currentScope->add(var);
+
         any = visit(ctx->exp());
         token = std::any_cast<size_t>(any);
         auto exp = tokens.getNode<ExprNodePtr>(token);

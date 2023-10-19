@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <assert.h>
 #include <cstddef>
 #include <functional>
 #include <map>
@@ -22,6 +23,7 @@ struct VarAssignNode;
 struct PrintNode;
 struct IfNode;
 struct LoopNode;
+struct VarScope;
 
 using NodePtr = Node*;
 using BlockNodePtr = BlockNode*;
@@ -34,6 +36,7 @@ using VarAssignNodePtr = VarAssignNode*;
 using PrintNodePtr = PrintNode*;
 using IfNodePtr = IfNode*;
 using LoopNodePtr = LoopNode*;
+using VarScopePtr = VarScope*;
 
 enum class ValueType {
     Boolean,
@@ -218,6 +221,36 @@ struct BlockNode : public Node {
     void addStat(StateNodePtr node) { body.push_back(node); }
     auto begin() { return body.begin(); }
     auto end() { return body.end(); }
+};
+
+struct VarScope {
+    BlockNodePtr block; // The block that this scope belongs to (not the block that this scope defines)
+    VarScopePtr parent;
+    std::map<std::string, ValueNodePtr> vars;
+
+    VarScope(BlockNodePtr block, VarScopePtr parent)
+        : block(block)
+        , parent(parent)
+    {
+    }
+
+    void add(ValueNodePtr var)
+    {
+        assert(var->getValueKind() == ValueNode::ValueKind::Var);
+        vars[var->name] = var;
+    }
+
+    ValueNodePtr find(std::string name)
+    {
+        auto it = vars.find(name);
+        if (it != vars.end()) {
+            return it->second;
+        }
+        if (parent) {
+            return parent->find(name);
+        }
+        return nullptr;
+    }
 };
 
 using NodeKind = Node::Type;
