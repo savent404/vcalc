@@ -374,12 +374,12 @@ struct BlockNode : public Node {
 };
 
 struct VarScope {
-    BlockNodePtr block; // The block that this scope belongs to (not the block that this scope defines)
+    NodePtr node; // The node that this scope belongs to (not the node that this scope defines)
     VarScopePtr parent;
     std::map<std::string, ValueNodePtr> vars;
 
-    VarScope(BlockNodePtr block, VarScopePtr parent)
-        : block(block)
+    VarScope(NodePtr node, VarScopePtr parent)
+        : node(node)
         , parent(parent)
     {
     }

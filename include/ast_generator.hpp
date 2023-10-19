@@ -84,27 +84,32 @@ struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
         return node->tokenId;
     }
 
+    void createVarScopeAndVisit(NodePtr binding, std::function<void(void)> fn)
+    {
+        auto scope = new VarScope { binding, currentScope };
+        auto old_scope = currentScope;
+
+        currentScope = scope;
+        fn();
+        currentScope = old_scope;
+    }
+
     BlockNodePtr createBlockAndVisit(std::function<void(void)> fn)
     {
         // create new block
         auto block = new BlockNode();
         tokens.addNode(block);
 
-        // register new VarScope
-        auto scope = new VarScope { block, currentScope };
-
         // push block and scope, use new one as current block
         auto block_backup = currentBlock;
-        auto scope_backup = currentScope;
         currentBlock = block;
-        currentScope = scope;
 
-        // call fn
-        fn();
-
+        // create new scope and visit fn()
+        createVarScopeAndVisit(block, [&]() {
+            fn();
+        });
         // pop block and scope, recover old one as current block
         currentBlock = block_backup;
-        currentScope = scope_backup;
 
         return block;
     }
