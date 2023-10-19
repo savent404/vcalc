@@ -5,6 +5,8 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/BackEnd.cpp"
 )
 
+set(CMAKE_CXX_STANDARD 17)
+
 # Build our executable from the source files.
 add_executable(vcalc ${vcalc_src_files})
 target_include_directories(vcalc PUBLIC ${ANTLR_GEN_DIR})

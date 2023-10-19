@@ -7,6 +7,8 @@
 #include "tree/ParseTreeWalker.h"
 
 #include "BackEnd.h"
+#include "ast.hpp"
+#include "ast_generator.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -39,9 +41,11 @@ int main(int argc, char **argv) {
   // MyVisitor visitor;
   // Visit the tree
   // visitor.visit(tree);
+  ast::VCalAstGenerator visitor;
+  visitor.visit(tree);
 
   BackEnd backend;
-  backend.emitMain();
+  backend.emitMain(*visitor.root);
 
   // HOW TO WRITE OUT.
   // std::ofstream out(argv[2]);
