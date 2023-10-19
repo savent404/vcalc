@@ -150,11 +150,13 @@ struct ExprNode : public Node {
     };
     Type exprType;
     ValueType valueType;
+    VecAttrPtr vecAttr;
 
-    explicit ExprNode(Type exprType, ValueType valueType)
+    explicit ExprNode(Type exprType, ValueType valueType, VecAttrPtr attr)
         : Node(Node::Type::Expr)
         , exprType(exprType)
         , valueType(valueType)
+        , vecAttr(attr)
     {
     }
     Type getExprKind() const { return exprType; }
@@ -186,8 +188,8 @@ struct ConvertNode : public ExprNode {
     CvtKind unaryKind;
     ExprNodePtr exp;
 
-    ConvertNode(ValueType type, ExprNodePtr exp)
-        : ExprNode(Type::Convert, type)
+    ConvertNode(ValueType type, VecAttrPtr attr, ExprNodePtr exp)
+        : ExprNode(Type::Convert, type, attr)
         , unaryKind(CvtKind::Bool2Int)
         , exp(std::move(exp))
     {
@@ -252,10 +254,9 @@ struct ValueNode : public ExprNode {
     ValueKind valueKind;
     std::string name; // works when valueKind == ValueKind::Var
     int const_val; // works when valueKind == ValueKind::Const
-    VecAttrPtr vecAttr; // works when valueType == ValueType::Vector
 
     ValueNode(int const_val)
-        : ExprNode(Type::Value, ValueType::Int)
+        : ExprNode(Type::Value, ValueType::Int, nullptr)
         , valueKind(ValueKind::Const)
         , const_val(const_val)
     {
@@ -263,14 +264,14 @@ struct ValueNode : public ExprNode {
 
     // NOVE: var's ValueType can be set by Vardef or query from parent scope
     ValueNode(std::string name)
-        : ExprNode(Type::Value, ValueType::Unknow)
+        : ExprNode(Type::Value, ValueType::Unknow, nullptr)
         , valueKind(ValueKind::Var)
         , name(name)
     {
     }
 
     ValueNode(ExprNodePtr start, ExprNodePtr end)
-        : ExprNode(Type::Value, ValueType::Vector)
+        : ExprNode(Type::Value, ValueType::Vector, nullptr)
     {
         // estimate if vector is const
         if (start->getExprKind() == end->getExprKind() && start->getExprKind() == ExprNode::Type::Value) {
@@ -318,8 +319,10 @@ struct BinaryNode : public ExprNode {
     BinaryKind binaryKind;
     ExprNodePtr lhs;
     ExprNodePtr rhs;
+
+    // TODO: can't figure out the vector size in compile time, need a runtime operation to get the size
     explicit BinaryNode(BinaryKind binaryKind, ExprNodePtr lhs, ExprNodePtr rhs)
-        : ExprNode(Type::Binary, ValueType::Unknow)
+        : ExprNode(Type::Binary, ValueType::Unknow, nullptr)
         , binaryKind(binaryKind)
         , lhs(lhs)
         , rhs(rhs)

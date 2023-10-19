@@ -121,7 +121,7 @@ struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
         });
 
         if (exp->getValueType() != ValueType::Boolean) {
-            exp = new ConvertNode { ValueType::Boolean, exp };
+            exp = new ConvertNode { ValueType::Boolean, nullptr, exp };
             tokens.addNode(exp);
         }
 
@@ -142,7 +142,7 @@ struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
         });
 
         if (exp->getValueType() != ValueType::Boolean) {
-            exp = new ConvertNode { ValueType::Boolean, exp };
+            exp = new ConvertNode { ValueType::Boolean, nullptr, exp };
             tokens.addNode(exp);
         }
 
@@ -220,7 +220,7 @@ struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
             auto fn_convert2Int = [&](ExprNodePtr node) {
                 auto type = node->getValueType();
                 if (type == ValueType::Boolean) {
-                    node = new ConvertNode { ValueType::Int, node };
+                    node = new ConvertNode { ValueType::Int, nullptr, node };
                     tokens.addNode(node);
                 } else if (type == ValueType::Int) {
                     // do nothing
@@ -298,10 +298,10 @@ private:
             // add type convert node(ConvertNode) for the little one
             // replace the binaryNode's lhs or rhs then
             if (res > 0) {
-                node->rhs = new ConvertNode { lhs->getValueType(), rhs };
+                node->rhs = new ConvertNode { lhs->getValueType(), lhs->vecAttr, rhs };
                 tokens.addNode(node->rhs);
             } else {
-                node->lhs = new ConvertNode { rhs->getValueType(), lhs };
+                node->lhs = new ConvertNode { rhs->getValueType(), rhs->vecAttr, lhs };
                 tokens.addNode(node->lhs);
             }
         } else {
@@ -310,7 +310,8 @@ private:
                 // force node's type as lhs and rhs's type
                 // add type convert node(ConvertNode) for node
                 node->valueType = lhs_valueType;
-                auto upper_node = new ConvertNode { node_valueType, node };
+                // NOVE: no vector attr for convert node
+                auto upper_node = new ConvertNode { node_valueType, nullptr, node };
                 // can't touch node anymore, so we need record tokens
                 tokens.addNode(node);
                 // return convert node as tree root
