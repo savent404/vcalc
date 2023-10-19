@@ -17,9 +17,8 @@ struct IdGenerator {
     }
 };
 
-template <typename BaseT>
 struct TokenManager {
-    std::map<size_t, BaseT> maps;
+    std::map<size_t, NodePtr> maps;
     size_t nextTokenId = 1;
     void addNode(NodePtr node)
     {
@@ -38,7 +37,7 @@ struct TokenManager {
 struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
     BlockNodePtr root;
     BlockNodePtr currentBlock;
-    TokenManager<NodePtr> tokens;
+    TokenManager tokens;
 
     VCalAstGenerator()
     {
