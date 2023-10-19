@@ -126,7 +126,6 @@ struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
         auto exp = tokens.getNode<ExprNodePtr>(token);
         auto node = new VarAssignNode { var, exp };
         tokens.addNode(node);
-        insertStat(node);
         return node->tokenId;
     }
 
@@ -140,7 +139,6 @@ struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
         auto exp = tokens.getNode<ExprNodePtr>(token);
         auto node = new VarDeclareNode { var, exp };
         tokens.addNode(node);
-        insertStat(node);
         return node->tokenId;
     }
 
