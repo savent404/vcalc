@@ -25,6 +25,7 @@ struct IfNode;
 struct LoopNode;
 struct VarScope;
 struct ConvertNode;
+struct VecAttr;
 
 using NodePtr = Node*;
 using BlockNodePtr = BlockNode*;
@@ -39,6 +40,7 @@ using IfNodePtr = IfNode*;
 using LoopNodePtr = LoopNode*;
 using VarScopePtr = VarScope*;
 using ConvertNodePtr = ConvertNode*;
+using VecAttrPtr = VecAttr*;
 
 enum class ValueType {
     Boolean = 0,
@@ -61,6 +63,11 @@ struct Node {
     }
     virtual ~Node() = default;
     Type getNodeKind() { return nodeType; }
+};
+
+struct VecAttr {
+    ExprNodePtr start;
+    ExprNodePtr end;
 };
 
 struct StateNode : public Node {
@@ -243,8 +250,9 @@ struct ValueNode : public ExprNode {
         Const,
     };
     ValueKind valueKind;
-    std::string name;
-    int const_val;
+    std::string name; // works when valueKind == ValueKind::Var
+    int const_val; // works when valueKind == ValueKind::Const
+    VecAttrPtr vecAttr; // works when valueType == ValueType::Vector
 
     ValueNode(int const_val)
         : ExprNode(Type::Value, ValueType::Int)
@@ -261,7 +269,33 @@ struct ValueNode : public ExprNode {
     {
     }
 
+    ValueNode(ExprNodePtr start, ExprNodePtr end)
+        : ExprNode(Type::Value, ValueType::Vector)
+    {
+        // estimate if vector is const
+        if (start->getExprKind() == end->getExprKind() && start->getExprKind() == ExprNode::Type::Value) {
+            auto valueStart = reinterpret_cast<ValueNodePtr>(start);
+            auto valueEnd = reinterpret_cast<ValueNodePtr>(end);
+            if (valueStart->getValueKind() == valueEnd->getValueKind()
+                && valueStart->getValueKind() == ValueNode::ValueKind::Const) {
+                valueKind = ValueKind::Const;
+            }
+        } else {
+            valueKind = ValueKind::Var;
+        }
+
+        auto attr = new VecAttr();
+        attr->start = start;
+        attr->end = end;
+        vecAttr = attr;
+    }
+
     ValueKind getValueKind() const { return valueKind; }
+
+    bool isImplicitVar() const
+    {
+        return valueKind == ValueKind::Var && name.empty();
+    }
 };
 
 struct BinaryNode : public ExprNode {

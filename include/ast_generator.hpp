@@ -213,7 +213,23 @@ struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
         } else if (ctx->operatorFilter()) {
             throw std::runtime_error("visitExp: not implemented");
         } else if (ctx->operatorRange()) {
-            node = createBinaryNodeHelper(BinaryKind::Range, ctx);
+            auto lhs_token = std::any_cast<size_t>(visit(ctx->exp(0)));
+            auto rhs_token = std::any_cast<size_t>(visit(ctx->exp(1)));
+            auto lhs = tokens.getNode<ExprNodePtr>(lhs_token);
+            auto rhs = tokens.getNode<ExprNodePtr>(rhs_token);
+            auto fn_convert2Int = [&](ExprNodePtr node) {
+                auto type = node->getValueType();
+                if (type == ValueType::Boolean) {
+                    node = new ConvertNode { ValueType::Int, node };
+                    tokens.addNode(node);
+                } else if (type == ValueType::Int) {
+                    // do nothing
+                } else {
+                    throw std::runtime_error("visitExp: range expect two int as index");
+                }
+                return node;
+            };
+            node = new ValueNode { fn_convert2Int(lhs), fn_convert2Int(rhs) };
         } else if (ctx->operatorMulDiv()) {
             node = createBinaryNodeHelper(getBinaryKind(ctx->operatorMulDiv()->getText()), ctx);
         } else if (ctx->operatorAddSub()) {

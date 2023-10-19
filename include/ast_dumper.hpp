@@ -237,30 +237,61 @@ public:
     }
     void dump(ValueNodePtr value)
     {
-        switch (value->getValueKind()) {
-        case ValueKind::Var:
+        // vector is a special case
+        if (value->vecAttr) {
+            auto attr = value->vecAttr;
             printIndent();
             std::cout << "VarNode {" << std::endl;
             Callee([&] {
+                std::string name = value->name;
+                if (value->isImplicitVar()) {
+                    name = "(implicit)";
+                }
                 printIndent();
-                std::cout << "name: " << value->name << std::endl;
+                std::cout << "name: " << name << std::endl;
                 printIndent();
-                std::cout << "type: " << value->getValueTypeStr() << std::endl;
+                std::cout << "start: {" << std::endl;
+                Callee([&] {
+                    dump(attr->start);
+                });
+                printIndent();
+                std::cout << "}" << std::endl;
+
+                printIndent();
+                std::cout << "end: {" << std::endl;
+                Callee([&] {
+                    dump(attr->end);
+                });
+                printIndent();
+                std::cout << "}" << std::endl;
             });
-            printIndent();
-            std::cout << "}" << std::endl;
-            break;
-        case ValueKind::Const:
-            printIndent();
-            std::cout << "ConstNode {" << std::endl;
-            Callee([&] {
+        } else {
+            switch (value->getValueKind()) {
+            case ValueKind::Var:
                 printIndent();
-                std::cout << "value: " << value->const_val << std::endl;
+                std::cout << "VarNode {" << std::endl;
+                Callee([&] {
+                    std::string name = value->isImplicitVar() ? "(implicit)" : value->name;
+                    printIndent();
+                    std::cout << "name: " << value->name << std::endl;
+                    printIndent();
+                    std::cout << "type: " << value->getValueTypeStr() << std::endl;
+                });
                 printIndent();
-                std::cout << "type: " << value->getValueTypeStr() << std::endl;
-            });
-            printIndent();
-            std::cout << "}" << std::endl;
+                std::cout << "}" << std::endl;
+                break;
+            case ValueKind::Const:
+                printIndent();
+                std::cout << "ConstNode {" << std::endl;
+                Callee([&] {
+                    printIndent();
+                    std::cout << "value: " << value->const_val << std::endl;
+                    printIndent();
+                    std::cout << "type: " << value->getValueTypeStr() << std::endl;
+                });
+                printIndent();
+                std::cout << "}" << std::endl;
+            }
         }
     }
 };
