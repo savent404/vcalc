@@ -214,9 +214,9 @@ struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
             assert(exp->getNodeKind() == Node::Type::Expr);
             return exp->tokenId;
         } else if (ctx->operatorGenerator()) {
-            throw std::runtime_error("visitExp: not implemented");
+            throw std::runtime_error("visitExp: generator not implemented");
         } else if (ctx->operatorFilter()) {
-            throw std::runtime_error("visitExp: not implemented");
+            throw std::runtime_error("visitExp: Filter not implemented");
         } else if (ctx->operatorRange()) {
             auto lhs_token = std::any_cast<size_t>(visit(ctx->exp(0)));
             auto rhs_token = std::any_cast<size_t>(visit(ctx->exp(1)));
