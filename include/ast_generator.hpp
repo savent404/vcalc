@@ -161,6 +161,20 @@ struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
         auto token = std::any_cast<size_t>(any);
         auto var = tokens.getNode<ValueNodePtr>(token);
 
+        // figure out var's ValueType
+        auto str = ctx->getText();
+        auto fn_beginWith = [](std::string str, std::string prefix) {
+            return str.substr(0, prefix.size()) == prefix;
+        };
+
+        if (fn_beginWith(str, "int")) {
+            var->valueType = ValueType::Int;
+        } else if (fn_beginWith(str, "vector")) {
+            var->valueType = ValueType::Vector;
+        } else {
+            throw std::runtime_error("visitVardef: unknown var type");
+        }
+
         // add var to current scope, check if var already defined
         if (currentScope->find(var->name)) {
             throw std::runtime_error("visitVardef: var already defined");
@@ -216,8 +230,18 @@ struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
     {
         ValueNodePtr node = nullptr;
         if (ctx->NAME()) {
+
+            // we also need new node for var 'a' even already defined 'a' in VarScope
+            // It be comes 'a.1' 'a.2' 'a.3' ... in backend to identify different state
             node = new ValueNode(ctx->NAME()->getText());
             // Find out var's valueType
+            auto var = currentScope->find(node->name);
+            if (var) {
+                node->valueType = var->valueType;
+            } else {
+                // NOTE: only leave Unknow if var not defined
+                // visitVardef will figure out var's valueType
+            }
         } else {
             node = new ValueNode(std::stoi(ctx->INT()->getText()));
         }
@@ -228,9 +252,6 @@ struct VCalAstGenerator : public vcalc::VCalcBaseVisitor {
 private:
     ExprNodePtr createBinaryNodeHelper(BinaryKind kind, vcalc::VCalcParser::ExpContext* ctx)
     {
-        auto force_boolean = [](BinaryKind kind) {
-            return kind >= BinaryKind::And;
-        };
         auto lhs_token = std::any_cast<size_t>(visit(ctx->exp(0)));
         auto rhs_token = std::any_cast<size_t>(visit(ctx->exp(1)));
         auto lhs = tokens.getNode<ExprNodePtr>(lhs_token);

@@ -39,7 +39,7 @@ using LoopNodePtr = LoopNode*;
 using VarScopePtr = VarScope*;
 
 enum class ValueType {
-    Boolean,
+    Boolean = 0,
     Int,
     Vector,
     Unknow,
@@ -149,6 +149,20 @@ struct ExprNode : public Node {
     }
     Type getExprKind() const { return exprType; }
     ValueType getValueType() const { return valueType; }
+    std::string getValueTypeStr() const
+    {
+        switch (valueType) {
+        case ValueType::Boolean:
+            return "boolean";
+        case ValueType::Int:
+            return "int";
+        case ValueType::Vector:
+            return "vector";
+        case ValueType::Unknow:
+            return "unknow";
+        }
+        return "unknow";
+    }
 };
 
 struct ValueNode : public ExprNode {
@@ -166,6 +180,8 @@ struct ValueNode : public ExprNode {
         , const_val(const_val)
     {
     }
+
+    // NOVE: var's ValueType can be set by Vardef or query from parent scope
     ValueNode(std::string name)
         : ExprNode(Type::Value, ValueType::Unknow)
         , valueKind(ValueKind::Var)
@@ -197,11 +213,36 @@ struct BinaryNode : public ExprNode {
     ExprNodePtr lhs;
     ExprNodePtr rhs;
     explicit BinaryNode(BinaryKind binaryKind, ExprNodePtr lhs, ExprNodePtr rhs)
-        : ExprNode(Type::Binary, binaryKind == BinaryKind::And || binaryKind == BinaryKind::Or ? ValueType::Boolean : ValueType::Int)
+        : ExprNode(Type::Binary, ValueType::Unknow)
         , binaryKind(binaryKind)
         , lhs(lhs)
         , rhs(rhs)
     {
+        bool has_vector = lhs->getValueType() == ValueType::Vector || rhs->getValueType() == ValueType::Vector;
+        if (binaryKind == BinaryKind::Range) {
+            valueType = ValueType::Vector;
+        } else if (binaryKind >= BinaryKind::And && !has_vector) {
+            valueType = ValueType::Boolean;
+        }
+        if (valueType != ValueType::Unknow) {
+            return;
+        }
+        /**
+         * create a matrix to figure out the result type of binary expression
+         * Like this:
+         * 0 1 2 3
+         * 1 1 2 3
+         * 2 2 2 3
+         * 3 3 3 3
+         */
+        ValueType lhs_type = lhs->getValueType(), rhs_type = rhs->getValueType();
+        ValueType result[4][4] = {
+            { ValueType::Boolean, ValueType::Int, ValueType::Vector, ValueType::Unknow },
+            { ValueType::Int, ValueType::Int, ValueType::Vector, ValueType::Unknow },
+            { ValueType::Vector, ValueType::Vector, ValueType::Vector, ValueType::Unknow },
+            { ValueType::Unknow, ValueType::Unknow, ValueType::Unknow, ValueType::Unknow },
+        };
+        valueType = result[static_cast<int>(lhs_type)][static_cast<int>(rhs_type)];
     }
     BinaryKind getBinaryKind() const { return binaryKind; }
 };

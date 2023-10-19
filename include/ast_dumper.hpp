@@ -192,6 +192,8 @@ public:
                 printIndent();
                 std::cout << "def $l $op $r" << std::endl;
                 printIndent();
+                std::cout << "out type: " << binaryExpr->getValueTypeStr() << std::endl;
+                printIndent();
                 std::cout << "op: " << binaryStr[static_cast<int>(binaryKind)] << std::endl;
                 printIndent();
                 std::cout << "$l: {" << std::endl;
@@ -222,6 +224,8 @@ public:
             Callee([&] {
                 printIndent();
                 std::cout << "name: " << value->name << std::endl;
+                printIndent();
+                std::cout << "type: " << value->getValueTypeStr() << std::endl;
             });
             printIndent();
             std::cout << "}" << std::endl;
@@ -232,6 +236,8 @@ public:
             Callee([&] {
                 printIndent();
                 std::cout << "value: " << value->const_val << std::endl;
+                printIndent();
+                std::cout << "type: " << value->getValueTypeStr() << std::endl;
             });
             printIndent();
             std::cout << "}" << std::endl;
