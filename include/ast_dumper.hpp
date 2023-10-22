@@ -190,19 +190,19 @@ public:
             break;
         case ExprKind::Binary:
             const std::string binaryStr[] = {
+                [static_cast<int>(BinaryKind::Range)] = "..",
                 [static_cast<int>(BinaryKind::Add)] = "+",
                 [static_cast<int>(BinaryKind::Sub)] = "-",
                 [static_cast<int>(BinaryKind::Mul)] = "*",
                 [static_cast<int>(BinaryKind::Div)] = "/",
                 [static_cast<int>(BinaryKind::And)] = "and",
                 [static_cast<int>(BinaryKind::Or)] = "or",
-                [static_cast<int>(BinaryKind::Range)] = "..",
-                [static_cast<int>(BinaryKind::Eq)] = "==",
                 [static_cast<int>(BinaryKind::Ne)] = "!=",
-                [static_cast<int>(BinaryKind::Lt)] = "<",
-                [static_cast<int>(BinaryKind::Le)] = "<=",
+                [static_cast<int>(BinaryKind::Eq)] = "==",
                 [static_cast<int>(BinaryKind::Gt)] = ">",
+                [static_cast<int>(BinaryKind::Lt)] = "<",
                 [static_cast<int>(BinaryKind::Ge)] = ">=",
+                [static_cast<int>(BinaryKind::Le)] = "<=",
             };
             printIndent();
             std::cout << "BinaryNode {" << std::endl;
